@@ -1,0 +1,17 @@
+configuration:
+  repositories:
+    name: Add-on Repositories
+    description: List of Home Assistant add-on repository URLs to manage.
+    fields:
+      name:
+        name: Name
+        description: A human-readable label for this repository.
+      url:
+        name: GitHub URL
+        description: Full GitHub URL of the repository (https://github.com/...).
+      description:
+        name: Description
+        description: Optional notes about this repository.
+      enabled:
+        name: Enabled
+        description: Toggle to include or exclude this repository.
