@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Multi Repo Manager</title>
+  <style>
+    :root {
+      --bg: #111827; --surface: #1f2937; --border: #374151;
+      --accent: #6366f1; --accent-hover: #4f46e5;
+      --danger: #ef4444; --success: #22c55e;
+      --text: #f9fafb; --muted: #9ca3af;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body { background: var(--bg); color: var(--text); font-family: system-ui, sans-serif; padding: 2rem 1rem; }
+    header { display: flex; align-items: center; gap: .75rem; margin-bottom: 2rem; }
+    header h1 { font-size: 1.4rem; font-weight: 700; }
+    header span { font-size: 1.6rem; }
+    .card { background: var(--surface); border: 1px solid var(--border); border-radius: .75rem; padding: 1.25rem 1.5rem; margin-bottom: 1.25rem; }
+    .repo-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; }
+    .repo-name { font-weight: 600; font-size: 1rem; }
+    .repo-desc { color: var(--muted); font-size: .85rem; margin-top: .25rem; }
+    .repo-url { font-size: .8rem; color: var(--accent); word-break: break-all; margin-top: .4rem; }
+    .badge { font-size: .7rem; padding: .15rem .55rem; border-radius: 9999px; font-weight: 600; white-space: nowrap; }
+    .badge-on  { background: #14532d; color: var(--success); }
+    .badge-off { background: #450a0a; color: var(--danger); }
+    .actions { display: flex; gap: .5rem; margin-top: .9rem; }
+    button { border: none; cursor: pointer; padding: .4rem .9rem; border-radius: .4rem; font-size: .82rem; font-weight: 500; transition: opacity .15s; }
+    button:hover { opacity: .85; }
+    .btn-toggle { background: var(--border); color: var(--text); }
+    .btn-delete { background: var(--danger); color: #fff; }
+    .btn-copy   { background: #374151; color: var(--text); }
+    .my-link { display: inline-block; margin-top: .5rem; font-size: .78rem; color: #a5b4fc; text-decoration: none; word-break: break-all; }
+    .my-link:hover { text-decoration: underline; }
+    hr { border-color: var(--border); margin: 1.5rem 0; }
+    h2 { font-size: 1.1rem; margin-bottom: 1rem; }
+    .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: .75rem; }
+    .form-full { grid-column: 1 / -1; }
+    label { display: block; font-size: .82rem; color: var(--muted); margin-bottom: .3rem; }
+    input { width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: .4rem; padding: .55rem .75rem; color: var(--text); font-size: .9rem; }
+    input:focus { outline: 2px solid var(--accent); }
+    .btn-add { background: var(--accent); color: #fff; padding: .6rem 1.4rem; font-size: .9rem; border-radius: .5rem; }
+    .btn-add:hover { background: var(--accent-hover); }
+    .error { color: var(--danger); background: #450a0a; border: 1px solid var(--danger); border-radius: .4rem; padding: .6rem 1rem; margin-bottom: 1rem; font-size: .88rem; }
+    .empty { color: var(--muted); font-size: .9rem; padding: .5rem 0; }
+    @media (max-width: 540px) { .form-grid { grid-template-columns: 1fr; } .form-full { grid-column: 1; } }
+  </style>
+</head>
+<body>
+  <header><span>📦</span><h1>Multi Repo Manager</h1></header>
+
+  {% if error %}<div class="error">{{ error }}</div>{% endif %}
+
+  {% if repos %}
+    {% for repo in repos %}
+    <div class="card">
+      <div class="repo-header">
+        <div>
+          <div class="repo-name">{{ repo.name }}</div>
+          {% if repo.description %}<div class="repo-desc">{{ repo.description }}</div>{% endif %}
+          <div class="repo-url">{{ repo.url }}</div>
+          <a class="my-link"
+             href="https://my.home-assistant.io/redirect/supervisor_add_addon_repository/?repository_url={{ repo.url | urlencode }}"
+             target="_blank" rel="noopener">➕ Open in Home Assistant</a>
+        </div>
+        <span class="badge {% if repo.enabled %}badge-on{% else %}badge-off{% endif %}">
+          {% if repo.enabled %}enabled{% else %}disabled{% endif %}
+        </span>
+      </div>
+      <div class="actions">
+        <form method="POST" action="/toggle/{{ loop.index0 }}">
+          <button class="btn-toggle" type="submit">{% if repo.enabled %}Disable{% else %}Enable{% endif %}</button>
+        </form>
+        <form method="POST" action="/delete/{{ loop.index0 }}"
+              onsubmit="return confirm('Remove {{ repo.name }}?')">
+          <button class="btn-delete" type="submit">Remove</button>
+        </form>
+        <button class="btn-copy" onclick="navigator.clipboard.writeText('{{ repo.url }}')">Copy URL</button>
+      </div>
+    </div>
+    {% endfor %}
+  {% else %}
+    <div class="card"><p class="empty">No repositories added yet. Use the form below.</p></div>
+  {% endif %}
+
+  <hr />
+  <h2>Add Repository</h2>
+  <form method="POST" action="/add">
+    <div class="form-grid">
+      <div>
+        <label for="name">Repository Name</label>
+        <input id="name" name="name" type="text" placeholder="HACS" required />
+      </div>
+      <div>
+        <label for="url">GitHub URL</label>
+        <input id="url" name="url" type="url" placeholder="https://github.com/author/repo" required />
+      </div>
+      <div class="form-full">
+        <label for="description">Description (optional)</label>
+        <input id="description" name="description" type="text" placeholder="What does this repository contain?" />
+      </div>
+    </div>
+    <br />
+    <button class="btn-add" type="submit">Add Repository</button>
+  </form>
+
+  <script>
+    document.querySelectorAll('.btn-copy').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const orig = btn.textContent;
+        btn.textContent = 'Copied!';
+        setTimeout(() => btn.textContent = orig, 1500);
+      });
+    });
+  </script>
+</body>
+</html>
