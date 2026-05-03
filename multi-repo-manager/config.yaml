@@ -1,0 +1,26 @@
+name: "Multi Repo Manager"
+slug: "multi_repo_manager"
+description: "Manage multiple Home Assistant add-on repositories from one app."
+version: "0.1.0"
+arch:
+  - amd64
+  - arm64
+  - armv7
+startup: services
+boot: auto
+ingress: true
+panel_icon: mdi:folder-multiple
+panel_title: Repo Manager
+ingress_port: 8080
+hassio_api: true
+homeassistant_api: true
+host_network: false
+map:
+  - config:rw
+options:
+  repositories: []
+schema:
+  repositories:
+    - name: str
+      url: url
+      enabled: bool?
