@@ -6,9 +6,6 @@ on:
   schedule:
     - cron: "0 4 * * *"
 
-env:
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
-
 jobs:
 
   lint-yaml:
@@ -17,6 +14,8 @@ jobs:
     steps:
       - name: ⤵️ Checkout
         uses: actions/checkout@v4.2.2
+        env:
+          FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
       - name: 🔍 Run yamllint
         uses: ibiqlik/action-yamllint@v3
@@ -35,6 +34,8 @@ jobs:
     steps:
       - name: ⤵️ Checkout
         uses: actions/checkout@v4.2.2
+        env:
+          FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
       - name: 🔍 Run hadolint
         uses: hadolint/hadolint-action@v3.1.0
@@ -48,6 +49,8 @@ jobs:
     steps:
       - name: ⤵️ Checkout
         uses: actions/checkout@v4.2.2
+        env:
+          FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
       - name: 🔍 Check required keys exist
         run: |
@@ -69,15 +72,17 @@ jobs:
     steps:
       - name: ⤵️ Checkout
         uses: actions/checkout@v4.2.2
+        env:
+          FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
 
       - name: 🏗️ Set up QEMU
-        uses: docker/setup-qemu-action@v3
+        uses: docker/setup-qemu-action@v3.6.0
 
       - name: 🏗️ Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@v3.10.0
 
       - name: 🐳 Build image (${{ matrix.arch }})
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v6.16.0
         with:
           context: multi-repo-manager
           file: multi-repo-manager/Dockerfile
