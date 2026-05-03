@@ -1,13 +1,88 @@
 name: Validate Add-on
 
-on: [push, pull_request]
+on:
+  push:
+  pull_request:
+  schedule:
+    - cron: "0 4 * * *"
 
 jobs:
-  validate:
+
+  # ── 1. Lint YAML files ─────────────────────────────────────────────────────
+  lint-yaml:
+    name: Lint YAML
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4
-      - name: Validate add-on config
-        uses: home-assistant/actions/helpers/validate-addon@master
+      - name: ⤵️ Checkout
+        uses: actions/checkout@v4
+
+      - name: 🔍 Run yamllint
+        uses: ibiqlik/action-yamllint@v3
         with:
-          path: multi-repo-manager/config.yaml
+          config_data: |
+            extends: default
+            rules:
+              line-length:
+                max: 120
+              truthy:
+                allowed-values: ['true', 'false', 'yes', 'no']
+
+  # ── 2. Lint Dockerfile ─────────────────────────────────────────────────────
+  lint-dockerfile:
+    name: Lint Dockerfile
+    runs-on: ubuntu-latest
+    steps:
+      - name: ⤵️ Checkout
+        uses: actions/checkout@v4
+
+      - name: 🔍 Run hadolint
+        uses: hadolint/hadolint-action@v3.1.0
+        with:
+          dockerfile: multi-repo-manager/Dockerfile
+          ignore: DL3018
+
+  # ── 3. Validate addon config.yaml fields ──────────────────────────────────
+  validate-config:
+    name: Validate config.yaml
+    runs-on: ubuntu-latest
+    steps:
+      - name: ⤵️ Checkout
+        uses: actions/checkout@v4
+
+      - name: 🔍 Check required keys exist
+        run: |
+          for key in name version slug description arch startup ingress; do
+            if ! grep -q "^${key}:" multi-repo-manager/config.yaml; then
+              echo "❌ Missing required key: ${key}"
+              exit 1
+            fi
+          done
+          echo "✅ All required keys present in config.yaml"
+
+  # ── 4. Test Docker build ───────────────────────────────────────────────────
+  build:
+    name: Test build (${{ matrix.arch }})
+    runs-on: ubuntu-latest
+    needs: [lint-yaml, lint-dockerfile, validate-config]
+    strategy:
+      matrix:
+        arch: [amd64, aarch64]
+    steps:
+      - name: ⤵️ Checkout
+        uses: actions/checkout@v4
+
+      - name: 🏗️ Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: 🏗️ Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: 🐳 Build image (${{ matrix.arch }})
+        uses: docker/build-push-action@v5
+        with:
+          context: multi-repo-manager
+          file: multi-repo-manager/Dockerfile
+          push: false
+          platforms: ${{ matrix.arch == 'amd64' && 'linux/amd64' || 'linux/arm64' }}
+          build-args: |
+            BUILD_FROM=ghcr.io/home-assistant/base:latest
