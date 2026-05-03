@@ -1,6 +1,14 @@
 #!/usr/bin/with-contenv bashio
 set -euo pipefail
 
-bashio::log.info "Starting Multi Repo Manager"
+bashio::log.info "Starting Multi Repo Manager..."
 
-python3 -m http.server 8080 --directory /config/ha-addons-ui
+mkdir -p /config/multi-repo-manager
+
+REPOS_FILE="/config/multi-repo-manager/repos.json"
+if [ ! -f "${REPOS_FILE}" ]; then
+  bashio::log.info "Creating empty repos.json..."
+  echo '{"repositories":[]}' > "${REPOS_FILE}"
+fi
+
+exec python3 /app/main.py
